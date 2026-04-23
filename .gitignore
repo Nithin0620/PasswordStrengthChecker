@@ -1,0 +1,28 @@
+# Compiled class files
+*.class
+
+# Maven build output
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Spring Boot specific
+spring-shell.log
+
+# Local tooling (Maven binary downloaded for local dev — not needed in repo)
+.tools/

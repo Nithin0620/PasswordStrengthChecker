@@ -33,7 +33,7 @@ export default function Home() {
       setError("");
       
       try {
-        const response = await fetch("http://localhost:8080/api/password/check", {
+        const response = await fetch("/api/password/check", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

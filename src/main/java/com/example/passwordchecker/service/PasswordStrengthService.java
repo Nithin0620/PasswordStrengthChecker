@@ -1,71 +1,73 @@
 package com.example.passwordchecker.service;
 
 import com.example.passwordchecker.model.PasswordStrengthResponse;
+import com.example.passwordchecker.model.PasswordStrengthResponse.Checks;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Core business logic — ported directly from the original Swing evaluate() method.
- *
- * Scoring:
- *   Length < 6          → 10 pts base
- *   Length 6–10         → 25 pts base
- *   Length > 10         → 50 pts base
- *   Has lowercase       → +10
- *   Has uppercase       → +10
- *   Has digit           → +15
- *   Has special char    → +15
- *   Max capped at 100
- *
- * Thresholds:
- *   ≤ 40  → Weak
- *   41–70 → Medium
- *   > 70  → Strong
- */
 @Service
 public class PasswordStrengthService {
 
     public PasswordStrengthResponse evaluate(String password) {
         if (password == null || password.isEmpty()) {
-            return new PasswordStrengthResponse(0, "Weak",
-                    List.of("Password cannot be empty."));
+            return new PasswordStrengthResponse(0, "Weak", new Checks(false, false, false, false, false, true, true));
         }
 
-        int score = password.length() < 6 ? 10
-                  : password.length() <= 10 ? 25
-                  : 50;
-
-        boolean hasLower   = false;
-        boolean hasUpper   = false;
-        boolean hasDigit   = false;
+        boolean length = password.length() >= 8;
+        boolean hasLower = false;
+        boolean hasUpper = false;
+        boolean hasDigit = false;
         boolean hasSpecial = false;
 
         for (char c : password.toCharArray()) {
-            if (Character.isLowerCase(c))      hasLower   = true;
-            else if (Character.isUpperCase(c)) hasUpper   = true;
-            else if (Character.isDigit(c))     hasDigit   = true;
-            else                               hasSpecial = true;
+            if (Character.isLowerCase(c)) hasLower = true;
+            else if (Character.isUpperCase(c)) hasUpper = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+            else hasSpecial = true;
         }
 
-        List<String> suggestions = new ArrayList<>();
+        // no repeated characters (e.g. 'aaa' or '111')
+        boolean noRepeatedChars = true;
+        for (int i = 0; i < password.length() - 2; i++) {
+            if (password.charAt(i) == password.charAt(i + 1) && password.charAt(i) == password.charAt(i + 2)) {
+                noRepeatedChars = false;
+                break;
+            }
+        }
 
-        if (hasLower)   score += 10; else suggestions.add("Add lowercase letters.");
-        if (hasUpper)   score += 10; else suggestions.add("Add uppercase letters.");
-        if (hasDigit)   score += 15; else suggestions.add("Add numbers.");
-        if (hasSpecial) score += 15; else suggestions.add("Add special characters (e.g. !@#$).");
+        // basic common pattern check
+        List<String> commonPatterns = List.of("12345", "password", "qwerty", "admin", "12345678");
+        boolean noCommonPatterns = true;
+        String lowerPass = password.toLowerCase();
+        for (String pattern : commonPatterns) {
+            if (lowerPass.contains(pattern)) {
+                noCommonPatterns = false;
+                break;
+            }
+        }
+
+        int score = 0;
+        if (length) score += 20;
+        if (hasLower) score += 10;
+        if (hasUpper) score += 15;
+        if (hasDigit) score += 15;
+        if (hasSpecial) score += 20;
+        if (noRepeatedChars) score += 10;
+        if (noCommonPatterns) score += 10;
+        
+        // base length bonuses
+        if (password.length() >= 12) score += 10;
 
         score = Math.min(score, 100);
 
-        if (score > 70) {
-            suggestions.add("Great password!");
-        }
+        String strength;
+        if (score < 40) strength = "Weak";
+        else if (score < 70) strength = "Medium";
+        else if (score < 90) strength = "Strong";
+        else strength = "Very Strong";
 
-        String strength = score <= 40 ? "Weak"
-                        : score <= 70 ? "Medium"
-                        : "Strong";
-
-        return new PasswordStrengthResponse(score, strength, suggestions);
+        Checks checks = new Checks(length, hasUpper, hasLower, hasDigit, hasSpecial, noCommonPatterns, noRepeatedChars);
+        return new PasswordStrengthResponse(score, strength, checks);
     }
 }

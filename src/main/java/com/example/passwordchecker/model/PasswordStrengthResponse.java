@@ -1,23 +1,17 @@
 package com.example.passwordchecker.model;
 
-import java.util.List;
-
 /**
- * API response payload returned by GET /api/check
+ * API response payload returned by POST /api/password/check
  */
-public class PasswordStrengthResponse {
+public record PasswordStrengthResponse(int score, String strength, Checks checks) {
 
-    private int score;           // 0–100
-    private String strength;     // "Weak" | "Medium" | "Strong"
-    private List<String> suggestions;
-
-    public PasswordStrengthResponse(int score, String strength, List<String> suggestions) {
-        this.score = score;
-        this.strength = strength;
-        this.suggestions = suggestions;
-    }
-
-    public int getScore() { return score; }
-    public String getStrength() { return strength; }
-    public List<String> getSuggestions() { return suggestions; }
+    public record Checks(
+            boolean length,
+            boolean uppercase,
+            boolean lowercase,
+            boolean digit,
+            boolean specialChar,
+            boolean noCommonPatterns,
+            boolean noRepeatedChars
+    ) {}
 }
